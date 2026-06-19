@@ -47,7 +47,13 @@ $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $outputDir = Join-Path -Path $scriptDir -ChildPath "${folderName}_${timestamp}"
 New-Item -Path $outputDir -ItemType Directory | Out-Null
 
+if (-not (Get-Module -ListAvailable -Name ImportExcel)) {
+    Write-Host "Installing ImportExcel module..."
+    Install-Module -Name ImportExcel -Force -Scope CurrentUser
+}
+
 $topLevelFolders = Get-ChildItem -Path $Path -Directory -ErrorAction Stop
+$summaryRows = @()
 
 foreach ($folder in $topLevelFolders) {
     $outputFile = Join-Path -Path $outputDir -ChildPath "$($folder.Name).txt"
@@ -57,12 +63,26 @@ foreach ($folder in $topLevelFolders) {
 
     if ($subfolders) {
         $subfolders | Out-File -FilePath $outputFile -Encoding UTF8
+        foreach ($sub in $subfolders) {
+            $summaryRows += [PSCustomObject]@{
+                "Main Folder"  = $folder.FullName
+                "Subfolder"    = $sub
+            }
+        }
     }
     else {
         New-Item -Path $outputFile -ItemType File -Force | Out-Null
+        $summaryRows += [PSCustomObject]@{
+            "Main Folder"  = $folder.FullName
+            "Subfolder"    = ""
+        }
     }
 
     Write-Host "Wrote $($subfolders.Count) subfolder(s) of '$($folder.Name)' to $outputFile"
 }
 
+$xlsxFile = Join-Path -Path $scriptDir -ChildPath "${folderName}_${timestamp}.xlsx"
+$summaryRows | Export-Excel -Path $xlsxFile -WorksheetName "Summary" -AutoSize -BoldTopRow
+
 Write-Host "Output saved to $outputDir"
+Write-Host "Excel summary saved to $xlsxFile"
