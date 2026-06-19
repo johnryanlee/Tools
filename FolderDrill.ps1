@@ -25,26 +25,44 @@
 #>
  
 param(
-    [string]$Path = (Get-Location).Path
+    [string]$Path
 )
+
+if (-not $Path) {
+    Add-Type -AssemblyName System.Windows.Forms
+    $browser = New-Object System.Windows.Forms.FolderBrowserDialog
+    $browser.Description = "Select the folder to process"
+    $browser.ShowNewFolderButton = $false
+    if ($browser.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+        $Path = $browser.SelectedPath
+    } else {
+        Write-Host "No folder selected. Exiting."
+        exit
+    }
+}
  
-# Top-level folders only
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$folderName = Split-Path -Leaf $Path
+$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+$outputDir = Join-Path -Path $scriptDir -ChildPath "${folderName}_${timestamp}"
+New-Item -Path $outputDir -ItemType Directory | Out-Null
+
 $topLevelFolders = Get-ChildItem -Path $Path -Directory -ErrorAction Stop
- 
+
 foreach ($folder in $topLevelFolders) {
-    $outputFile = Join-Path -Path $Path -ChildPath "$($folder.Name).txt"
- 
-    # All subfolders and further subfolders, recursively
+    $outputFile = Join-Path -Path $outputDir -ChildPath "$($folder.Name).txt"
+
     $subfolders = Get-ChildItem -Path $folder.FullName -Directory -Recurse -ErrorAction SilentlyContinue |
         Select-Object -ExpandProperty FullName
- 
+
     if ($subfolders) {
         $subfolders | Out-File -FilePath $outputFile -Encoding UTF8
     }
     else {
-        # No subfolders found; create an empty file for consistency
         New-Item -Path $outputFile -ItemType File -Force | Out-Null
     }
- 
+
     Write-Host "Wrote $($subfolders.Count) subfolder(s) of '$($folder.Name)' to $outputFile"
 }
+
+Write-Host "Output saved to $outputDir"
