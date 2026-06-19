@@ -2,19 +2,23 @@
 .SYNOPSIS
     For each top-level folder in a directory, writes a list of all its subfolders
     (recursively) into a text file named after that folder.
- 
+
 .DESCRIPTION
     1. Gets the list of folders directly inside -Path (default: current directory).
     2. For each of those folders, recursively finds every subfolder underneath it.
     3. Writes the full paths of those subfolders into "<FolderName>.txt", saved in -Path.
- 
+
 .PARAMETER Path
     The directory to scan. Defaults to the current working directory.
- 
+
+.NOTES
+    Before running this script, you may need to update your execution policy:
+    Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+
 .EXAMPLE
     .\List-Subfolders.ps1
     Runs against the current directory.
- 
+
 .EXAMPLE
     .\List-Subfolders.ps1 -Path "C:\Projects"
     Runs against C:\Projects instead.
