@@ -64,17 +64,20 @@ foreach ($folder in $topLevelFolders) {
     if ($subfolders) {
         $subfolders | Out-File -FilePath $outputFile -Encoding UTF8
         foreach ($sub in $subfolders) {
+            $relativePath = $sub.Substring($folder.FullName.TrimEnd('\').Length + 1)
             $summaryRows += [PSCustomObject]@{
-                "Main Folder"  = $folder.FullName
-                "Subfolder"    = $sub
+                "Main Folder"    = $folder.FullName
+                "Subfolder"      = $sub
+                "Relative Path"  = $relativePath
             }
         }
     }
     else {
         New-Item -Path $outputFile -ItemType File -Force | Out-Null
         $summaryRows += [PSCustomObject]@{
-            "Main Folder"  = $folder.FullName
-            "Subfolder"    = ""
+            "Main Folder"    = $folder.FullName
+            "Subfolder"      = ""
+            "Relative Path"  = ""
         }
     }
 
@@ -82,7 +85,7 @@ foreach ($folder in $topLevelFolders) {
 }
 
 $xlsxFile = Join-Path -Path $scriptDir -ChildPath "${folderName}_${timestamp}.xlsx"
-$summaryRows | Export-Excel -Path $xlsxFile -WorksheetName "Summary" -AutoSize -BoldTopRow
+$summaryRows | Export-Excel -Path $xlsxFile -WorksheetName "Summary" -AutoSize -BoldTopRow -FreezeTopRow -AutoFilter -Style (New-ExcelStyle -Range "1:1" -BackgroundColor LightGray)
 
 Write-Host "Output saved to $outputDir"
 Write-Host "Excel summary saved to $xlsxFile"
